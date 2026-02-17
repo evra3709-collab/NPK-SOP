@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MaintenanceReport, DashboardStats, Attachment } from './types.ts';
-import { getMaintenanceAdvice } from './services/geminiService.ts';
-import { generatePDFReport } from './services/pdfService.ts';
-import { exportReportsToExcel, parseReportsFromExcel, downloadExcelTemplate } from './services/excelService.ts';
-import ReportCard from './components/ReportCard.tsx';
+import { MaintenanceReport, DashboardStats, Attachment } from './types';
+import { getMaintenanceAdvice } from './services/geminiService';
+import { generatePDFReport } from './services/pdfService';
+import { exportReportsToExcel, parseReportsFromExcel, downloadExcelTemplate } from './services/excelService';
+import ReportCard from './components/ReportCard';
 import { 
   LayoutDashboard, 
   PlusCircle, 
