@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MaintenanceReport } from '../types.ts';
+import { MaintenanceReport } from '../types';
 import { 
   Calendar, 
   Clock, 

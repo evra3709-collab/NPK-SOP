@@ -1,6 +1,6 @@
 
 import { jsPDF } from "jspdf";
-import { MaintenanceReport } from "../types.ts";
+import { MaintenanceReport } from "../types";
 
 let cachedFontBase64: string | null = null;
 const FONT_SOURCES = [

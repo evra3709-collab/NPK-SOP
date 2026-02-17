@@ -1,6 +1,6 @@
 
 import * as XLSX from 'xlsx';
-import { MaintenanceReport } from '../types.ts';
+import { MaintenanceReport } from '../types';
 
 export const exportReportsToExcel = (reports: MaintenanceReport[]) => {
   const data = reports.map(r => ({
