@@ -3,17 +3,19 @@ import * as XLSX from 'xlsx';
 import { MaintenanceReport } from '../types';
 
 export const exportReportsToExcel = (reports: MaintenanceReport[]) => {
-  const data = reports.map(r => ({
+  const data = reports.map((r, index) => ({
+    'NO.': index + 1,
     '통지번호': r.notificationNo,
+    '설비명': r.equipmentName,
     '부서': r.workDept,
-    '설비': r.equipmentName,
     '날짜': r.failDate,
+    '고장 내용': r.workContent,
     '상태': r.isCompleted ? '완료' : '진행중'
   }));
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "정비이력");
-  XLSX.writeFile(workbook, `Maintenance_${Date.now()}.xlsx`);
+  XLSX.writeFile(workbook, `Maintenance_Export_${Date.now()}.xlsx`);
 };
 
 export const downloadExcelTemplate = () => {
