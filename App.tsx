@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MaintenanceReport, DashboardStats, Attachment } from './types';
-import { getMaintenanceAdvice } from './services/geminiService';
-import { generatePDFReport } from './services/pdfService';
-import { exportReportsToExcel, parseReportsFromExcel, downloadExcelTemplate } from './services/excelService';
-import ReportCard from './components/ReportCard';
+import { MaintenanceReport, DashboardStats, Attachment } from './types.ts';
+import { getMaintenanceAdvice } from './services/geminiService.ts';
+import { generatePDFReport } from './services/pdfService.ts';
+import { exportReportsToExcel, parseReportsFromExcel, downloadExcelTemplate } from './services/excelService.ts';
+import ReportCard from './components/ReportCard.tsx';
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -46,7 +46,6 @@ type ViewMode = 'card' | 'table';
 type SortKey = 'index' | 'notificationNo' | 'workDept' | 'equipmentName' | 'dateTime' | 'workContent' | 'isCompleted';
 type SortDirection = 'asc' | 'desc' | null;
 
-// 대시보드 전용 확장형 카드 컴포넌트
 const DashboardRecentCard: React.FC<{ r: MaintenanceReport, onEdit: (r: MaintenanceReport) => void, onDelete: (id: string) => void }> = ({ r, onEdit, onDelete }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -118,7 +117,6 @@ const App: React.FC = () => {
   
   const excelUploadRef = useRef<HTMLInputElement>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   const [formData, setFormData] = useState({
     notificationNo: '', equipmentName: '', workDept: '공무', workContent: '', 
@@ -177,7 +175,6 @@ const App: React.FC = () => {
         next.delete(String(id));
         return next;
       });
-      // 현재 모달에서 편집 중인 데이터를 삭제한 경우 모달 닫기 및 인덱스 초기화
       if (editingIndex !== null && reports[editingIndex]?.id === id) {
         setIsFormOpen(false);
         setEditingIndex(null);
@@ -201,21 +198,6 @@ const App: React.FC = () => {
       alert(`${newReports.length}건 업로드 완료`);
       if (excelUploadRef.current) excelUploadRef.current.value = '';
     } catch (err) { alert('엑셀 로드 오류'); }
-  };
-
-  const handleBulkArchive = (archive: boolean) => {
-    const ids = Array.from(selectedIds);
-    setReports(prev => prev.map(r => ids.includes(String(r.id)) ? { ...r, isArchived: archive } : r));
-    setSelectedIds(new Set());
-  };
-
-  const handleBulkPDFDownload = async () => {
-    if (selectedIds.size === 0) return;
-    setIsBulkDownloading(true);
-    const selectedReports = reports.filter(r => selectedIds.has(String(r.id)));
-    await generatePDFReport(selectedReports);
-    setIsBulkDownloading(false);
-    setSelectedIds(new Set());
   };
 
   const toggleReportStatus = (id: string) => {
@@ -533,7 +515,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* 정비 내용 모달 */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-npk-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl flex flex-col border-4 border-npk-yellow animate-in zoom-in-95 duration-200 overflow-hidden max-h-[95vh]">

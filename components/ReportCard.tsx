@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MaintenanceReport } from '../types';
+import { MaintenanceReport } from '../types.ts';
 import { 
   Calendar, 
   Clock, 
@@ -43,13 +43,11 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // 중복 확인창을 피하기 위해 App.tsx의 onDelete만 호출합니다.
     onDelete(String(report.id));
   };
 
   return (
     <div className={`bg-white border-2 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group relative flex flex-col h-full ${isSelected ? 'border-npk-yellow ring-4 ring-npk-yellow/10' : 'border-gray-100 hover:border-npk-blue/30'}`}>
-      {/* 선택 체크박스 */}
       <button 
         onClick={(e) => { e.stopPropagation(); onSelect?.(); }}
         className="absolute top-5 left-5 z-10 p-1.5 rounded-lg bg-white/80 backdrop-blur shadow-sm border border-gray-100 text-npk-blue hover:scale-105 transition-transform"
@@ -58,7 +56,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
       </button>
 
       <div className="p-6 pt-14 flex-1 flex flex-col">
-        {/* 상단 헤더 영역 */}
         <div className="flex items-start justify-between mb-5 gap-3">
           <div className="flex-1 min-w-0 flex items-start space-x-3">
             <div className={`p-3 rounded-2xl transition-colors shrink-0 ${isSelected ? 'bg-npk-yellow text-npk-blue' : 'bg-npk-light text-npk-blue group-hover:bg-npk-blue group-hover:text-white'}`}>
@@ -81,7 +78,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
             </div>
           </div>
           
-          {/* 액션 버튼 그룹 */}
           <div className="flex items-center space-x-1 shrink-0 relative z-20 pt-1">
             <button 
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
@@ -115,7 +111,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
           </div>
         </div>
 
-        {/* 일시 정보 */}
         <div className="grid grid-cols-2 gap-2 mb-5">
           <div className="flex items-center space-x-2 text-[11px] font-black text-black bg-npk-light/40 p-2 rounded-xl border border-npk-light/30">
             <Calendar size={13} className="shrink-0 text-npk-blue" />
@@ -127,7 +122,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
           </div>
         </div>
 
-        {/* 고장 내용 */}
         <div className="space-y-4 flex-1">
           <div>
             <div className="flex items-center space-x-1.5 mb-1">
@@ -139,7 +133,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
             </p>
           </div>
           
-          {/* AI 인사이트 */}
           {report.aiInsights && (
             <div className={`rounded-2xl border-2 transition-all duration-300 ${isExpanded ? 'bg-npk-light/30 border-npk-blue/20' : 'bg-yellow-50/50 border-npk-yellow/20'}`}>
               <button 
@@ -165,7 +158,6 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
         </div>
       </div>
       
-      {/* 푸터 영역 */}
       <div className={`px-6 py-3 border-t-2 flex justify-between items-center transition-colors ${isSelected ? 'bg-npk-yellow/5 border-npk-yellow/10' : 'bg-gray-50/50 border-gray-50'}`}>
         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">생성: {report.createdAt}</span>
         <div className="flex items-center space-x-1.5">
