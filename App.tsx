@@ -38,7 +38,9 @@ import {
   FileIcon,
   Edit2,
   Clock,
-  FileDown
+  FileDown,
+  Check,
+  ImagePlus
 } from 'lucide-react';
 
 type TabType = 'dashboard' | 'reports' | 'history' | 'archive';
@@ -63,15 +65,22 @@ const DashboardRecentCard: React.FC<{ r: MaintenanceReport, onEdit: (r: Maintena
       <h5 className="font-black text-xl text-black truncate mb-2">{r.equipmentName}</h5>
       <p className="text-xs font-bold text-gray-500 line-clamp-2 italic mb-4 flex-1">"{r.workContent}"</p>
       
+      {r.attachments && r.attachments.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <Paperclip size={12} className="text-npk-blue" />
+          <span className="text-[10px] font-black text-npk-blue">{r.attachments.length}개의 첨부 이미지</span>
+        </div>
+      )}
+
       {r.aiInsights && (
         <div 
           onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-          className={`mt-3 p-4 rounded-2xl border transition-all duration-300 ${isExpanded ? 'bg-npk-light/50 border-npk-blue/30' : 'bg-npk-light/30 border-npk-blue/10 hover:bg-npk-light/40'}`}
+          className={`mt-3 p-4 rounded-2xl border transition-all duration-300 ${isExpanded ? 'bg-white border-npk-blue/30 shadow-sm' : 'bg-white border-npk-blue/10 hover:bg-gray-50'}`}
         >
           <div className="flex items-center justify-between mb-2 text-npk-blue">
             <div className="flex items-center gap-1.5">
               <Sparkles size={14} className="text-npk-yellow fill-npk-blue" />
-              <span className="text-[10px] font-black uppercase tracking-tight">AI 기술권고</span>
+              <span className="text-[10px] font-black uppercase tracking-tight">AI 솔루션</span>
             </div>
             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </div>
@@ -116,6 +125,7 @@ const App: React.FC = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   
   const excelUploadRef = useRef<HTMLInputElement>(null);
+  const imageUploadRef = useRef<HTMLInputElement>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [formData, setFormData] = useState({
@@ -164,6 +174,29 @@ const App: React.FC = () => {
     setIsFormOpen(true);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setAttachments(prev => [...prev, {
+          name: file.name,
+          type: file.type,
+          data: base64
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    if (imageUploadRef.current) imageUploadRef.current.value = '';
+  };
+
+  const removeAttachment = (idx: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleDeleteIndividual = (id: string) => {
     const target = reports.find(r => String(r.id) === String(id));
     if (!target) return;
@@ -180,6 +213,20 @@ const App: React.FC = () => {
         setEditingIndex(null);
       }
     }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    if (window.confirm(`선택한 ${selectedIds.size}건의 데이터를 영구 삭제하시겠습니까?`)) {
+      setReports(prev => prev.filter(r => !selectedIds.has(String(r.id))));
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedIds.size === 0) return;
+    const selectedReports = reports.filter(r => selectedIds.has(String(r.id)));
+    await generatePDFReport(selectedReports);
   };
 
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,9 +335,16 @@ const App: React.FC = () => {
               <th className="px-6 py-6 w-16 text-center">
                 <button onClick={() => {
                   const allIds = data.map(r => String(r.id));
-                  const allSel = allIds.every(id => selectedIds.has(id));
-                  if (allSel) setSelectedIds(new Set());
-                  else setSelectedIds(new Set(allIds));
+                  const allSel = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
+                  if (allSel) {
+                    const next = new Set(selectedIds);
+                    allIds.forEach(id => next.delete(id));
+                    setSelectedIds(next);
+                  } else {
+                    const next = new Set(selectedIds);
+                    allIds.forEach(id => next.add(id));
+                    setSelectedIds(next);
+                  }
                 }}>
                   {data.length > 0 && data.every(r => selectedIds.has(String(r.id))) ? <CheckSquare size={24} className="text-npk-yellow" /> : <Square size={24} className="text-white/40" />}
                 </button>
@@ -374,7 +428,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans relative">
       <div className="fixed left-0 top-0 h-full w-64 bg-npk-blue text-white p-6 hidden lg:flex flex-col border-r border-npk-dark z-40 shadow-2xl">
         <div className="flex items-center space-x-3 mb-12">
           <div className="p-3 bg-npk-yellow text-npk-blue rounded-xl shadow-lg"><HardHat size={32} /></div>
@@ -394,7 +448,7 @@ const App: React.FC = () => {
         </nav>
       </div>
 
-      <main className="flex-1 lg:ml-64 p-4 md:p-8 lg:p-12">
+      <main className="flex-1 lg:ml-64 p-4 md:p-8 lg:p-12 pb-32">
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <span className="text-xs font-black text-npk-blue uppercase italic tracking-widest">NPK SOP MAINTENANCE</span>
@@ -407,7 +461,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button onClick={downloadExcelTemplate} className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-500 hover:bg-gray-50 transition-colors"><FileText size={18} /> 양식 다운로드</button>
-            <button onClick={() => { setIsFormOpen(true); setEditingIndex(null); }} className="flex items-center space-x-2 bg-npk-yellow text-npk-blue px-6 py-4 rounded-2xl font-black shadow-lg hover:bg-yellow-400 transition-all">
+            <button onClick={() => { setIsFormOpen(true); setEditingIndex(null); setAttachments([]); }} className="flex items-center space-x-2 bg-npk-yellow text-npk-blue px-6 py-4 rounded-2xl font-black shadow-lg hover:bg-yellow-400 transition-all">
               <PlusCircle size={22} /> <span>새 보고서 작성</span>
             </button>
           </div>
@@ -416,9 +470,30 @@ const App: React.FC = () => {
         {activeTab !== 'dashboard' && activeTab !== 'archive' && (
           <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 mb-6">
             <div className="flex flex-col lg:flex-row gap-4 items-center">
-              <div className="relative w-full lg:max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input type="text" placeholder="검색어 입력..." className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent focus:border-npk-blue focus:bg-white rounded-xl outline-none font-bold text-sm text-black transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <div className="relative w-full lg:max-w-md flex items-center gap-3">
+                <button 
+                  onClick={() => {
+                    const currentIds = filteredAndSortedReports.map(r => String(r.id));
+                    const isAllSelected = currentIds.every(id => selectedIds.has(id));
+                    if (isAllSelected) {
+                      const next = new Set(selectedIds);
+                      currentIds.forEach(id => next.delete(id));
+                      setSelectedIds(next);
+                    } else {
+                      const next = new Set(selectedIds);
+                      currentIds.forEach(id => next.add(id));
+                      setSelectedIds(next);
+                    }
+                  }}
+                  className={`shrink-0 p-3 rounded-xl border-2 transition-all flex items-center gap-2 font-black text-xs ${filteredAndSortedReports.length > 0 && filteredAndSortedReports.every(r => selectedIds.has(String(r.id))) ? 'bg-npk-blue border-npk-blue text-white' : 'bg-white border-gray-100 text-gray-400'}`}
+                >
+                  {filteredAndSortedReports.length > 0 && filteredAndSortedReports.every(r => selectedIds.has(String(r.id))) ? <CheckSquare size={16} /> : <Square size={16} />}
+                  전체
+                </button>
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input type="text" placeholder="검색어 입력..." className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent focus:border-npk-blue focus:bg-white rounded-xl outline-none font-bold text-sm text-black transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
               </div>
               <div className="flex flex-1 flex-wrap items-center gap-3 w-full lg:justify-end">
                 <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100">
@@ -467,11 +542,17 @@ const App: React.FC = () => {
             </div>
           )}
           {activeTab === 'reports' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filteredAndSortedReports.map(report => (
-                <ReportCard key={report.id} report={report} onDownload={generatePDFReport} onEdit={() => handleOpenEdit(report)} onArchive={handleArchiveReport} onDelete={handleDeleteIndividual} isSelected={selectedIds.has(String(report.id))} onSelect={() => toggleSelect(report.id)} />
-              ))}
-            </div>
+            <>
+              {reportViewMode === 'card' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {filteredAndSortedReports.map(report => (
+                    <ReportCard key={report.id} report={report} onDownload={generatePDFReport} onEdit={() => handleOpenEdit(report)} onArchive={handleArchiveReport} onDelete={handleDeleteIndividual} isSelected={selectedIds.has(String(report.id))} onSelect={() => toggleSelect(report.id)} />
+                  ))}
+                </div>
+              ) : (
+                <TableView data={filteredAndSortedReports} />
+              )}
+            </>
           )}
           {activeTab === 'history' && <TableView data={filteredAndSortedReports} />}
           {activeTab === 'archive' && (
@@ -515,6 +596,48 @@ const App: React.FC = () => {
         </div>
       </main>
 
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[90] animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-npk-dark text-white px-8 py-5 rounded-[2.5rem] shadow-2xl flex items-center gap-10 border-2 border-npk-yellow min-w-[500px]">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 text-npk-yellow font-black">
+                <Check size={20} strokeWidth={3} />
+                <span className="text-xl">{selectedIds.size}건 뉴스 선택됨</span>
+              </div>
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Selected Maintenance Items</span>
+            </div>
+            
+            <div className="h-10 w-[1px] bg-white/10" />
+            
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={handleBulkDownload}
+                className="flex items-center gap-2 px-6 py-3 bg-npk-blue hover:bg-npk-blue/80 text-white rounded-2xl text-sm font-black transition-all shadow-lg"
+              >
+                <FileDown size={18} />
+                일괄 PDF 출력
+              </button>
+              
+              <button 
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-black transition-all shadow-lg"
+              >
+                <Trash2 size={18} />
+                일괄 삭제
+              </button>
+              
+              <button 
+                onClick={() => setSelectedIds(new Set())}
+                className="p-3 text-white/60 hover:text-white transition-colors"
+                title="선택 해제"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isFormOpen && (
         <div className="fixed inset-0 bg-npk-dark/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl flex flex-col border-4 border-npk-yellow animate-in zoom-in-95 duration-200 overflow-hidden max-h-[95vh]">
@@ -531,6 +654,44 @@ const App: React.FC = () => {
                   <div className="space-y-1"><label className="text-[10px] font-black text-npk-blue uppercase tracking-tighter">발생 날짜</label><input type="date" required name="failDate" value={formData.failDate} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none font-bold text-sm border-2 border-transparent focus:border-npk-blue" /></div>
                   <div className="space-y-1"><label className="text-[10px] font-black text-npk-blue uppercase tracking-tighter">발생 시간</label><input type="time" required name="failTime" value={formData.failTime} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none font-bold text-sm border-2 border-transparent focus:border-npk-blue" /></div>
                 </div>
+                
+                {/* 이미지 첨부 섹션 */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-npk-blue uppercase tracking-tighter flex items-center gap-2">
+                    현장 사진 첨부 <span className="text-gray-400 normal-case font-bold">(최대 5장 권장)</span>
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                    {attachments.map((img, idx) => (
+                      <div key={idx} className="relative aspect-square group">
+                        <img src={img.data} alt="preview" className="w-full h-full object-cover rounded-2xl border-2 border-gray-100" />
+                        <button 
+                          type="button"
+                          onClick={() => removeAttachment(idx)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button 
+                      type="button"
+                      onClick={() => imageUploadRef.current?.click()}
+                      className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 hover:bg-gray-100 hover:border-npk-blue/30 transition-all text-gray-400 hover:text-npk-blue"
+                    >
+                      <ImagePlus size={24} className="mb-1" />
+                      <span className="text-[10px] font-black">사진 추가</span>
+                      <input 
+                        type="file" 
+                        ref={imageUploadRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        multiple 
+                        onChange={handleImageUpload} 
+                      />
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-1"><label className="text-[10px] font-black text-npk-blue uppercase tracking-tighter">고장발생경위</label><textarea required name="workContent" value={formData.workContent} onChange={handleInputChange} rows={2} className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none font-bold text-sm border-2 border-transparent focus:border-npk-blue resize-none" /></div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1"><label className="text-[10px] font-black text-npk-blue uppercase tracking-tighter">고장 원인</label><textarea required name="cause" value={formData.cause} onChange={handleInputChange} rows={2} className="w-full px-4 py-3 bg-gray-50 rounded-xl outline-none font-bold text-sm border-2 border-transparent focus:border-npk-blue resize-none" /></div>

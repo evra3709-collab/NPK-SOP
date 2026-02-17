@@ -134,14 +134,14 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onDownload, onEdit, onA
           </div>
           
           {report.aiInsights && (
-            <div className={`rounded-2xl border-2 transition-all duration-300 ${isExpanded ? 'bg-npk-light/30 border-npk-blue/20' : 'bg-yellow-50/50 border-npk-yellow/20'}`}>
+            <div className={`rounded-2xl border-2 transition-all duration-300 ${isExpanded ? 'bg-white border-npk-blue/20 shadow-sm' : 'bg-white border-npk-yellow/20'}`}>
               <button 
                 onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                 className="w-full flex items-center justify-between p-3 focus:outline-none"
               >
                 <div className="flex items-center space-x-2 text-npk-blue">
                   <Cpu size={14} className="text-npk-yellow fill-npk-blue" />
-                  <span className="text-[10px] font-black uppercase tracking-tight">AI 기술 권고</span>
+                  <span className="text-[10px] font-black uppercase tracking-tight">AI 솔루션</span>
                 </div>
                 {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
